@@ -70,7 +70,7 @@ class LiveTrader:
         
         # Track positions and balance
         self.position = 0  # 0: No position, 1: Long
-        self.balance = 0
+        self.balance = initial_balance if test_mode else 0
         self.crypto_held = 0
         self.last_action = None
         self.trade_history = []
@@ -112,8 +112,7 @@ class LiveTrader:
     def _get_account_info(self):
         """Get account balance information"""
         if self.test_mode:
-            print("Test mode: Using simulated account balance")
-            return {'balance': 10000, 'crypto': 0}
+            return {'balance': self.balance, 'crypto': self.crypto_held}
         
         try:
             account = self.client.get_account()

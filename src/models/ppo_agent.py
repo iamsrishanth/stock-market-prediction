@@ -1,8 +1,8 @@
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.optimizers.schedules import ExponentialDecay, PiecewiseConstantDecay
-import tensorflow.keras.backend as K
+from tf_keras.optimizers import Adam
+from tf_keras.optimizers.schedules import ExponentialDecay, PiecewiseConstantDecay
+import tf_keras.backend as K
 from src.models.cnn_lstm_model import CNNLSTM
 
 class PPOAgent:
@@ -71,11 +71,27 @@ class PPOAgent:
         self.adaptive_epsilon = adaptive_epsilon
         
         # Create CNN-LSTM model
-        self.model = CNNLSTM(input_shape, action_space, learning_rate)
+        self.cnn_lstm = CNNLSTM(input_shape, action_space, learning_rate)
+        self.optimizer_type = 'adam'
         
-        # Actor and critic models
-        self.actor = self.model.get_actor()
-        self.critic = self.model.get_critic()
+        # Risk metrics
+        self.current_drawdown = 0.0
+        self.win_count = 0
+        self.total_trades = 0
+        
+        # Build models
+        self.actor = self.cnn_lstm._build_actor_model()
+        self.critic = self.cnn_lstm._build_critic_model()
+        
+    def reset_risk_metrics(self, initial_capital):
+        """Reset risk metrics for testing"""
+        self.current_drawdown = 0.0
+        self.win_count = 0
+        self.total_trades = 0
+        
+    def update_volatility(self, price_history):
+        """Update volatility metrics (placeholder)"""
+        pass
         
         # Create optimizers with learning rate scheduling
         if use_lr_schedule:
@@ -139,7 +155,7 @@ class PPOAgent:
 
         return action, action_probs
 
-    def remember(self, state, action, reward, next_state, done, action_probs):
+    def remember(self, state, action, reward, next_state, done, action_probs, position_size=None, pnl=None):
         """
         Store experience in memory for trajectory collection
         """
@@ -149,7 +165,20 @@ class PPOAgent:
         self.rewards.append(reward)
         self.next_states.append(next_state.astype(np.float32) if isinstance(next_state, np.ndarray) else next_state)
         self.dones.append(done)
-        self.action_probs.append(action_probs)
+        
+        # Only append action_probs if provided (might be None in testing)
+        if action_probs is not None:
+            self.action_probs.append(action_probs)
+            
+        # Update risk metrics if pnl is provided
+        if pnl is not None:
+            self.total_trades += 1
+            if pnl > 0:
+                self.win_count += 1
+                
+            # Update drawdown (simplified)
+            if pnl < 0:
+                self.current_drawdown = max(self.current_drawdown, -pnl/1000) # Assuming 1000 base
     
     def _calculate_kl_divergence(self, old_probs, new_probs):
         """
@@ -441,6 +470,7 @@ class PPOAgent:
     
     def load_models(self, actor_path, critic_path):
         """Load actor and critic models from disk"""
-        self.actor = tf.keras.models.load_model(actor_path)
-        self.critic = tf.keras.models.load_model(critic_path)
+        import tf_keras
+        self.actor = tf_keras.models.load_model(actor_path)
+        self.critic = tf_keras.models.load_model(critic_path)
     

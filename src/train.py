@@ -581,8 +581,9 @@ def train_agent(
         f'models/{symbol}_critic_best.keras'
     )
     
-    # Initialize risk metrics for testing
-    test_agent.reset_risk_metrics(initial_capital=initial_balance)
+    # Initialize risk metrics for testing (if supported)
+    if hasattr(test_agent, 'reset_risk_metrics'):
+        test_agent.reset_risk_metrics(initial_capital=initial_balance)
     
     # Test loop with risk management
     test_state = test_env.reset()
@@ -592,7 +593,7 @@ def train_agent(
     test_trades = []
     
     # Initialize price history for volatility calculation
-    if len(test_df) > 100:
+    if len(test_df) > 100 and hasattr(test_agent, 'update_volatility'):
         # Get the appropriate price column name
         price_column = 'close'
         if 'close_orig' in test_df.columns:
@@ -604,16 +605,27 @@ def train_agent(
         price_history = np.array(test_df[price_column].values[:100])
         test_agent.update_volatility(price_history)
     
-    print("Running test with risk management...")
+    print("Running test...")
     pbar = tqdm(total=len(test_df) - lookback_window_size, desc="Testing")
     
     while not done:
-        # Get action with position sizing
-        action, _, position_size = test_agent.get_action(test_state, training=False)
+        # Get action
+        # Handle different get_action signatures if needed
+        try:
+            action, _ = test_agent.get_action(test_state, training=False)
+            position_size = 1.0
+        except ValueError:
+            # Fallback if it returns 3 values
+            action, _, position_size = test_agent.get_action(test_state, training=False)
+            
         position_sizes.append(position_size)
         
-        # Take action in environment with position sizing
-        next_state, reward, done, info = test_env.step(action, position_size)
+        # Take action in environment
+        # Check if step supports position_size
+        try:
+            next_state, reward, done, info = test_env.step(action)
+        except TypeError:
+            next_state, reward, done, info = test_env.step(action, position_size)
         
         # Calculate PnL for risk tracking
         pnl = info['net_worth'] - test_env.prev_net_worth
@@ -628,11 +640,15 @@ def train_agent(
             })
             
             # Update risk metrics in the agent
-            test_agent.remember(test_state, action, reward, next_state, done, None,
-                              position_size=position_size, pnl=pnl)
+            # Use appropriate remember signature
+            try:
+                test_agent.remember(test_state, action, reward, next_state, done, None,
+                                  position_size=position_size, pnl=pnl)
+            except TypeError:
+                test_agent.remember(test_state, action, reward, next_state, done, None)
         
         # Update volatility estimate periodically (every 20 steps)
-        if test_env.current_step % 20 == 0 and test_env.current_step > lookback_window_size:
+        if test_env.current_step % 20 == 0 and test_env.current_step > lookback_window_size and hasattr(test_agent, 'update_volatility'):
             # Get the appropriate price column name
             price_column = 'close'
             if 'close_orig' in test_df.columns:
