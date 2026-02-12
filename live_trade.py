@@ -24,8 +24,8 @@ if __name__ == "__main__":
                         help='Run in test mode without real trades (default: True)')
     parser.add_argument('--max-iterations', type=int, default=24,
                         help='Maximum number of trading iterations (default: 24)')
-    parser.add_argument('--interval-seconds', type=int, default=3600,
-                        help='Seconds between trading decisions (default: 3600)')
+    parser.add_argument('--interval-seconds', type=int, default=600,
+                        help='Seconds between trading decisions (default: 600)')
     parser.add_argument('--initial-balance', type=float, default=10000,
                         help='Initial balance for test mode (default: 10000)')
     parser.add_argument('--commission', type=float, default=0.001,

@@ -301,7 +301,7 @@ class LiveTrader:
         
         return state
     
-    def run(self, interval_seconds=3600, max_iterations=None):
+    def run(self, interval_seconds=600, max_iterations=None):
         """
         Run the live trading bot
         
@@ -438,4 +438,4 @@ if __name__ == "__main__":
     )
     
     # Run with a trading decision every hour, maximum 24 iterations (1 day)
-    trader.run(interval_seconds=3600, max_iterations=24) 
+    trader.run(interval_seconds=600, max_iterations=24) 
