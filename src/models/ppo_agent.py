@@ -1,8 +1,8 @@
 import numpy as np
 import tensorflow as tf
-from tf_keras.optimizers import Adam
-from tf_keras.optimizers.schedules import ExponentialDecay, PiecewiseConstantDecay
-import tf_keras.backend as K
+from keras.optimizers import Adam
+from keras.optimizers.schedules import ExponentialDecay, PiecewiseConstantDecay
+import keras.backend as K
 from src.models.cnn_lstm_model import CNNLSTM
 
 class PPOAgent:
@@ -470,7 +470,7 @@ class PPOAgent:
     
     def load_models(self, actor_path, critic_path):
         """Load actor and critic models from disk"""
-        import tf_keras
-        self.actor = tf_keras.models.load_model(actor_path)
-        self.critic = tf_keras.models.load_model(critic_path)
+        import keras
+        self.actor = keras.models.load_model(actor_path)
+        self.critic = keras.models.load_model(critic_path)
     

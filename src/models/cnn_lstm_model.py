@@ -1,7 +1,7 @@
 import tensorflow as tf
-from tf_keras.models import Model
-from tf_keras.layers import Input, Dense, Conv1D, MaxPooling1D, LSTM, Flatten, Concatenate, Dropout
-from tf_keras.optimizers import Adam
+from keras.models import Model
+from keras.layers import Input, Dense, Conv1D, MaxPooling1D, LSTM, Flatten, Concatenate, Dropout
+from keras.optimizers import Adam
 
 class CNNLSTM:
     """CNN-LSTM model for feature extraction and time series forecasting based on the paper architecture"""
